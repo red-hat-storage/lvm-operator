@@ -103,6 +103,13 @@ func (r *LVMClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		// Error reading the object - requeue the request.
 		return ctrl.Result{}, err
 	}
+
+	err = r.verifyLvmClusterSpec(ctx, lvmCluster)
+	if err != nil {
+		r.Log.Error(err, "failed to verify LVM cluster spec")
+		return ctrl.Result{}, err
+	}
+
 	err = r.checkIfOpenshift(ctx)
 	if err != nil {
 		r.Log.Error(err, "failed to check cluster type")
@@ -206,6 +213,46 @@ func (r *LVMClusterReconciler) reconcile(ctx context.Context, instance *lvmv1alp
 	r.Log.Info("successfully reconciled LvmCluster")
 
 	return ctrl.Result{}, nil
+}
+
+func (r *LVMClusterReconciler) verifyLvmClusterSpec(ctx context.Context, instance *lvmv1alpha1.LVMCluster) error {
+
+	// make sure no device overlap with another VGs
+	// use map to find the duplicate entries for paths
+	// use devices path as key and vg name as val
+	devices := make(map[string]string)
+
+	for _, deviceClass := range instance.Spec.Storage.DeviceClasses {
+		if deviceClass.DeviceSelector != nil {
+			for _, path := range deviceClass.DeviceSelector.Paths {
+				if val, ok := devices[path]; ok {
+					var err error
+					if val != deviceClass.Name {
+						err = fmt.Errorf("Error: device path %s overlaps in two different deviceClasss %s and %s", path, val, deviceClass.Name)
+					} else {
+						err = fmt.Errorf("Error: device path %s is specified at multiple places in deviceClass %s", path, val)
+					}
+					r.Log.Error(err, "failed to verify device paths")
+
+					instance.Status.Ready = false
+					instance.Status.Reason = err.Error()
+
+					// Apply status changes
+					err = r.Client.Status().Update(ctx, instance)
+					if err != nil {
+						if errors.IsNotFound(err) {
+							r.Log.Error(err, "failed to update status")
+						}
+						return err
+					}
+					return err
+				}
+				devices[path] = deviceClass.Name
+			}
+		}
+	}
+
+	return nil
 }
 
 func (r *LVMClusterReconciler) updateLVMClusterStatus(ctx context.Context, instance *lvmv1alpha1.LVMCluster) error {
