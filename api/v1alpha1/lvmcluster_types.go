@@ -143,6 +143,8 @@ type NodeStatus struct {
 	Node string `json:"node,omitempty"`
 	// Status is the status of the VG on the node
 	Status VGStatusType `json:"status,omitempty"`
+	// Reason provides more detail on the VG creation status
+	Reason string `json:"reason,omitempty"`
 	// Devices is the list of devices used by the deviceclass
 	Devices []string `json:"devices,omitempty"`
 }

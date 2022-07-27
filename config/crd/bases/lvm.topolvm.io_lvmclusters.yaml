@@ -256,6 +256,10 @@ spec:
                           node:
                             description: Node is the name of the node
                             type: string
+                          reason:
+                            description: Reason provides more detail on the VG creation
+                              status
+                            type: string
                           status:
                             description: Status is the status of the VG on the node
                             type: string
