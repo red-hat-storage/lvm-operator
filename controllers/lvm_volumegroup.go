@@ -43,8 +43,14 @@ func (c lvmVG) ensureCreated(r *LVMClusterReconciler, ctx context.Context, lvmCl
 	lvmVolumeGroups := c.getLvmVolumeGroups(r, lvmCluster)
 
 	for _, volumeGroup := range lvmVolumeGroups {
-		result, err := cutil.CreateOrUpdate(ctx, r.Client, volumeGroup, func() error {
-			// no need to mutate any field
+		existingvolumeGroup := &lvmv1alpha1.LVMVolumeGroup{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      volumeGroup.Name,
+				Namespace: volumeGroup.Namespace,
+			},
+		}
+		result, err := cutil.CreateOrUpdate(ctx, r.Client, existingvolumeGroup, func() error {
+			existingvolumeGroup.Spec = volumeGroup.Spec
 			return nil
 		})
 

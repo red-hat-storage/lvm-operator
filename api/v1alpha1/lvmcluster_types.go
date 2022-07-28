@@ -90,6 +90,12 @@ type DeviceSelector struct {
 	// MinSize is the minimum size of the device which needs to be included. Defaults to `1Gi` if empty
 	// +optional
 	// MinSize *resource.Quantity `json:"minSize,omitempty"`
+
+	// A list of device paths which would be chosen for creating Volume Group.
+	// for example "/dev/disk/by-path/pci-0000:04:00.0-nvme-1"
+	// We discourage using the device names as they can change over node restarts.
+	// +optional
+	Paths []string `json:"paths,omitempty"`
 }
 
 // type DeviceClassConfig struct {
@@ -108,6 +114,11 @@ type LVMClusterStatus struct {
 	// Ready describes if the LVMCluster is ready.
 	// +optional
 	Ready bool `json:"ready,omitempty"`
+
+	// Reason describes the reason behind any success or failure.
+	// +optional
+	Reason string `json:"reason,omitempty"`
+
 	// DeviceClassStatuses describes the status of all deviceClasses
 	DeviceClassStatuses []DeviceClassStatus `json:"deviceClassStatuses,omitempty"`
 }
@@ -132,6 +143,8 @@ type NodeStatus struct {
 	Node string `json:"node,omitempty"`
 	// Status is the status of the VG on the node
 	Status VGStatusType `json:"status,omitempty"`
+	// Reason provides more detail on the VG creation status
+	Reason string `json:"reason,omitempty"`
 	// Devices is the list of devices used by the deviceclass
 	Devices []string `json:"devices,omitempty"`
 }
